@@ -2,11 +2,30 @@ use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
-fn main() {
-    let file = get_file();
-    let reader = BufReader::new(file);
+// https://adventofcode.com/2022/day/1
 
-    let mut elfs: Vec<i32> = Vec::new();
+fn main() {
+    let elfs: Vec<i32> = process_calories();
+
+    if elfs.is_empty() {
+        println!("Sorry, no food today :(")
+    } else {
+        let mut max_elf_id = 0;
+        let mut max_calories = elfs[0];
+        for (elf, calories) in elfs.iter().enumerate() {
+            if *calories >= max_calories {
+                max_elf_id = elf;
+                max_calories = *calories;
+            }
+        }
+        println!("Elf {} is one, with {} calories", max_elf_id, max_calories);
+    }
+}
+
+fn process_calories() -> Vec<i32> {
+    let reader = BufReader::new(get_file());
+
+    let mut elfs = Vec::new();
     let mut current_elf = 0;
     // init first position
     elfs.push(0);
@@ -25,20 +44,7 @@ fn main() {
             // println!("Update! {:?}", elfs);
         }
     }
-
-    if elfs.is_empty() {
-        println!("Sorry, no food today :(")
-    } else {
-        let mut max_elf_id = 0;
-        let mut max_calories = elfs[0];
-        for (elf, calories) in elfs.iter().enumerate() {
-            if *calories >= max_calories {
-                max_elf_id = elf;
-                max_calories = *calories;
-            }
-        }
-        println!("Elf {} is one, with {} calories", max_elf_id, max_calories);
-    }
+    elfs
 }
 
 fn get_file() -> File {
