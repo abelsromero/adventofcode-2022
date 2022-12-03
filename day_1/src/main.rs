@@ -44,7 +44,12 @@ fn process_calories() -> Vec<i32> {
             // println!("Update! {:?}", elfs);
         }
     }
-    elfs
+
+    if elfs.iter().all(|v| *v == 0) {
+        Vec::new()
+    } else {
+        elfs
+    }
 }
 
 fn get_file() -> File {
