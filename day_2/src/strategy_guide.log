@@ -1,0 +1,10 @@
+// A Rock, B Paper, C Scissors
+// X Rock, Y Paper, Z Scissors
+// score: 1 for Rock, 2 for Paper, and 3 for Scissors) +
+//   outcome (0 lost, 3 draw, 6 win).
+// Rock, Paper
+A Y
+// Paper, Rock
+B X
+// Sci, Sci
+C Z
