@@ -1,0 +1,5 @@
+= Advent of Code 2022
+
+Personal repo for https://adventofcode.com/2022/.
+
+Main goal is practicing new languages, just getting things to work.
