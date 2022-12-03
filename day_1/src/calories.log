@@ -2,6 +2,11 @@
 2000
 3000
 
+// non-parseable lines are ignored
+invalid
+
+// non-parseable lines are ignored
+
 4000
 
 5000

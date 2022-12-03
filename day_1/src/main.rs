@@ -18,7 +18,8 @@ fn main() {
                 max_calories = *calories;
             }
         }
-        println!("Elf {} is one, with {} calories", max_elf_id, max_calories);
+        // Count from 1, as normal ppl do
+        println!("Elf {} is one, with {} calories", max_elf_id + 1, max_calories);
     }
 }
 
@@ -33,14 +34,16 @@ fn process_calories() -> Vec<i32> {
     for line in reader.lines() {
         let line_str = line.unwrap();
         // println!("Processing: {}", line_str);
-        if line_str.len() == 0 {
+        // Do not add a new elf for every empty line
+        if line_str.len() == 0 && elfs[current_elf] > 0 {
             current_elf += 1;
             elfs.push(0);
             // println!("New elf! {}", current_elf)
         } else {
-            // TODO handle parsing errors
-            let x: i32 = line_str.parse().unwrap();
-            elfs[current_elf] += x;
+            let result: Result<i32, _> = line_str.parse();
+            if result.is_ok() {
+                elfs[current_elf] += result.unwrap();
+            }
             // println!("Update! {:?}", elfs);
         }
     }
