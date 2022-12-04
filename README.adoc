@@ -19,3 +19,4 @@ IntelliJ can run & debug tests normally same as Java.
 *** Implement PartialEq trait to use `Vec::contains`
 * Day 4
 ** A method can return multiple values, and that tuple CAN'T be passed to a method directly.
+** Practice with '?' operand: it cannot be used for quick replacement of unwrap for tests :'(

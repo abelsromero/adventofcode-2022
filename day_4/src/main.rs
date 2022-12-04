@@ -29,9 +29,10 @@ fn find_overlaps() {
             let captures = LINE_PATTERN.captures(&line_str).unwrap();
 
             let (first_start, first_end) = extract_assignment(&captures, 1, 2);
-            let first_assignment = Assignment::from(first_start, first_end);
+            let first_assignment = Assignment::from(first_start, first_end).unwrap();
+
             let (seconds_start, second_end) = extract_assignment(&captures, 3, 4);
-            let second_assignment = Assignment::from(seconds_start, second_end);
+            let second_assignment = Assignment::from(seconds_start, second_end).unwrap();
 
             if first_assignment.contained_in(&second_assignment) {
                 println!("Line {}: First assigment included: {:?}", line_index + 1, line_str)
@@ -52,14 +53,20 @@ fn extract_assignment(captures: &Captures, capture1: usize, capture2: usize) -> 
 
 #[derive(Debug)]
 struct Assignment {
-    // TODO start >= 1
+    // TODO assignment could come in any other
     start: u32,
     end: u32,
 }
 
 impl Assignment {
-    fn from(start: u32, end: u32) -> Assignment {
-        Assignment { start, end }
+    fn from(start: u32, end: u32) -> Result<Assignment, String> {
+        if start == 0 {
+            return Err(String::from("start cannot be 0"));
+        }
+        if end == 0 {
+            return Err(String::from("end cannot be 0"));
+        }
+        Ok(Assignment { start, end })
     }
 
     fn contained_in(&self, other: &Assignment) -> bool {
@@ -92,41 +99,53 @@ mod assigment_tests {
 
     #[test]
     fn assigment_not_contained() {
-        let first = Assignment::from(1, 2);
-        let second = Assignment::from(3, 4);
+        let first = Assignment::from(1, 2).unwrap();
+        let second = Assignment::from(3, 4).unwrap();
         let actual = first.contained_in(&second);
         assert_eq!(actual, false);
     }
 
     #[test]
     fn assigment_is_contained_and_equal() {
-        let first = Assignment::from(2, 3);
-        let second = Assignment::from(2, 3);
+        let first = Assignment::from(2, 3).unwrap();
+        let second = Assignment::from(2, 3).unwrap();
         let actual = first.contained_in(&second);
         assert_eq!(actual, true);
     }
 
     #[test]
     fn assigment_is_contained() {
-        let first = Assignment::from(2, 3);
-        let second = Assignment::from(1, 4);
+        let first = Assignment::from(2, 3).unwrap();
+        let second = Assignment::from(1, 4).unwrap();
         let actual = first.contained_in(&second);
         assert_eq!(actual, true);
     }
 
     #[test]
     fn assigment_is_not_contained_by_start() {
-        let first = Assignment::from(0, 3);
-        let second = Assignment::from(1, 4);
+        let first = Assignment::from(1, 3).unwrap();
+        let second = Assignment::from(2, 4).unwrap();
         let actual = first.contained_in(&second);
         assert_eq!(actual, false);
     }
 
     #[test]
     fn assigment_is_not_contained_by_end() {
-        let first = Assignment::from(2, 5);
-        let second = Assignment::from(1, 4);
+        let first = Assignment::from(2, 5).unwrap();
+        let second = Assignment::from(1, 4).unwrap();
         let actual = first.contained_in(&second);
         assert_eq!(actual, false);
+    }
+
+    #[test]
+    fn assigment_starts_cannot_be_0() {
+        let error = Assignment::from(0, 1).unwrap_err();
+        assert_eq!(error, "start cannot be 0");
+    }
+
+    #[test]
+    fn assigment_end_cannot_be_0() {
+        let error = Assignment::from(1,0).unwrap_err();
+        assert_eq!(error, "end cannot be 0");
     }
 }
