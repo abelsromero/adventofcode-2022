@@ -17,3 +17,5 @@ IntelliJ can run & debug tests normally same as Java.
 ** Abstracting char as a struct required (done for exercising, in this case it adds code and complexity. Hoping the 0-cost-abstraction promise is true):
 *** Derive Debug for printing the Vector containing it
 *** Implement PartialEq trait to use `Vec::contains`
+* Day 4
+** A method can return multiple values, and that tuple CAN'T be passed to a method directly.
