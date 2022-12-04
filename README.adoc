@@ -3,3 +3,14 @@
 Personal repo for https://adventofcode.com/2022/.
 
 Main goal is practicing new languages, just getting things to work.
+
+== Lessons learnt
+
+* Day 1
+** IntelliJ plugin can support multiple Rust projects under a root directory.
+Just "attach" them selecting the `Cargo.toml` file.** `unwrap` causes move. Can't unwrap the same reference twice.
+* Day 2
+** Use `regex` to validate input valid lines.
+* Day 3
+** Writing unit tests for TDD approach.
+IntelliJ can run & debug tests normally same as Java.
