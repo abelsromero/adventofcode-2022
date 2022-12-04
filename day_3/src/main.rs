@@ -1,5 +1,4 @@
-use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::BufRead;
 
 use file_utils::read_file;
 
@@ -10,9 +9,10 @@ fn main() {
     println!("Total priority for all duplicated items: {}", total_priority);
 }
 
-// TODO line length must be even
 fn is_valid_line(line: &String) -> bool {
-    line.len() > 0 && !line.starts_with("//")
+    line.len() > 0 &&
+        line.len() % 2 == 0 &&
+        !line.starts_with("//")
 }
 
 fn find_repeated_types() -> u32 {
