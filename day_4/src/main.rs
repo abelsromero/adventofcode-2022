@@ -6,8 +6,7 @@ use regex::{Captures, Regex};
 use file_utils::read_file;
 
 lazy_static! {
-    // TODO support blank
-    static ref LINE_PATTERN: Regex = Regex::new(r"^(\d+)-(\d+),(\d+)-(\d+)$").unwrap();
+    static ref LINE_PATTERN: Regex = Regex::new(r"^(\d+)-(\d+),[[:blank:]]*(\d+)-(\d+)$").unwrap();
 }
 
 fn main() {
