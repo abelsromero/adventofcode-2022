@@ -1,6 +1,7 @@
-use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+
+use file_utils::read_file;
 
 // https://adventofcode.com/2022/day/3
 
@@ -15,7 +16,7 @@ fn is_valid_line(line: &String) -> bool {
 }
 
 fn find_repeated_types() -> u32 {
-    let reader = BufReader::new(get_file());
+    let reader = read_file();
     let mut total_priority: u32 = 0;
 
     for (line_index, line) in reader.lines().enumerate() {
@@ -84,12 +85,22 @@ impl PartialEq for Item {
     }
 }
 
-fn get_file() -> File {
-    let home_dir = env::var("HOME").unwrap();
-    let path = "github/adventofcode-2022/day_3/src";
-    let filename = "rucksack_items.log";
-    let full_path = format!("{}/{}/{}", home_dir, path, filename);
-    File::open(full_path).unwrap()
+mod file_utils {
+    use std::env;
+    use std::fs::File;
+    use std::io::BufReader;
+
+    pub(crate) fn read_file() -> BufReader<File> {
+        BufReader::new(get_file())
+    }
+
+    fn get_file() -> File {
+        let home_dir = env::var("HOME").unwrap();
+        let path = "github/adventofcode-2022/day_3/src";
+        let filename = "rucksack_items.log";
+        let full_path = format!("{}/{}/{}", home_dir, path, filename);
+        File::open(full_path).unwrap()
+    }
 }
 
 #[allow(non_snake_case)]
