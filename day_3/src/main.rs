@@ -22,23 +22,24 @@ fn find_repeated_types() -> u32 {
         let line_str = line.unwrap();
 
         if is_valid_line(&line_str) {
-            let mut repeated_types: Vec<char> = Vec::new();
+            let mut repeated_types: Vec<Item> = Vec::new();
             // Leave 0 index unused for simplicity
             let mut priorities = [0; 53];
 
             let compartment_size = line_str.len() / 2;
 
             for (i, char) in line_str.chars().enumerate() {
+                let item = Item::from(char);
+                let priority = item.calculate_priority();
                 // usize to make array happy, u32 is compatible  (on x86-64 at least, usize bigger, 64 bit)
-                let priority = calculate_priority(char);
                 let priority_as_usize = priority as usize;
                 // First compartment
                 if i < compartment_size {
                     priorities[priority_as_usize] += 1;
                 } else {
                     if priorities[priority_as_usize] > 0 {
-                        if !repeated_types.contains(&char) {
-                            repeated_types.push(char);
+                        if !repeated_types.contains(&item) {
+                            repeated_types.push(item);
                             total_priority += priority;
                         }
                         priorities[priority_as_usize] += 1;
@@ -54,13 +55,33 @@ fn find_repeated_types() -> u32 {
     total_priority
 }
 
-// TODO create Priority type with internal methods for conversions
-fn calculate_priority(item_type: char) -> u32 {
-    // internal values: a = 97, A = 65
-    return match item_type.is_lowercase() {
-        true => ((item_type as u32) - 97) + 1,
-        false => ((item_type as u32) - 65) + 27,
-    };
+#[derive(Debug)]
+struct Item {
+    priority: char,
+}
+
+impl Item {
+    fn from(priority: char) -> Item {
+        Item { priority }
+    }
+
+    fn calculate_priority(&self) -> u32 {
+        // internal values: a = 97, A = 65
+        return match self.priority.is_lowercase() {
+            true => ((self.priority as u32) - 97) + 1,
+            false => ((self.priority as u32) - 65) + 27,
+        };
+    }
+}
+
+impl PartialEq for Item {
+    fn eq(&self, other: &Self) -> bool {
+        self.priority == other.priority
+    }
+
+    fn ne(&self, other: &Self) -> bool {
+        self.priority != other.priority
+    }
 }
 
 fn get_file() -> File {
@@ -71,32 +92,36 @@ fn get_file() -> File {
     File::open(full_path).unwrap()
 }
 
-
+#[allow(non_snake_case)]
 #[cfg(test)]
-mod tests {
-    use crate::calculate_priority;
+mod item_tests {
+    use crate::Item;
 
     #[test]
     fn calculate_priority_for_a() {
-        let actual = calculate_priority('a');
+        let item = Item::from('a');
+        let actual = item.calculate_priority();
         assert_eq!(actual, 1);
     }
 
     #[test]
     fn calculate_priority_for_z() {
-        let actual = calculate_priority('z');
+        let item = Item::from('z');
+        let actual = item.calculate_priority();
         assert_eq!(actual, 26);
     }
 
     #[test]
     fn calculate_priority_for_A() {
-        let actual = calculate_priority('A');
+        let item = Item::from('A');
+        let actual = item.calculate_priority();
         assert_eq!(actual, 27);
     }
 
     #[test]
     fn calculate_priority_for_Z() {
-        let actual = calculate_priority('Z');
+        let item = Item::from('Z');
+        let actual = item.calculate_priority();
         assert_eq!(actual, 52);
     }
 }
