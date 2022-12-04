@@ -8,15 +8,19 @@ Main goal is practicing new languages, just getting things to work.
 
 * Day 1
 ** IntelliJ plugin can support multiple Rust projects under a root directory.
-Just "attach" them selecting the `Cargo.toml` file.** `unwrap` causes move. Can't unwrap the same reference twice.
+Just "attach" them selecting the `Cargo.toml` file.** `unwrap` causes move.
+Can't unwrap the same reference twice.
 * Day 2
 ** Use `regex` to validate input valid lines.
 * Day 3
 ** Writing unit tests for TDD approach.
 IntelliJ can run & debug tests normally same as Java.
-** Abstracting char as a struct required (done for exercising, in this case it adds code and complexity. Hoping the 0-cost-abstraction promise is true):
+** Abstracting char as a struct required (done for exercising, in this case it adds code and complexity.
+Hoping the 0-cost-abstraction promise is true):
 *** Derive Debug for printing the Vector containing it
 *** Implement PartialEq trait to use `Vec::contains`
 * Day 4
 ** A method can return multiple values, and that tuple CAN'T be passed to a method directly.
 ** Practice with '?' operand: it cannot be used for quick replacement of unwrap for tests :'(
+** Beware using constructor without named args.
+If the var name is the same, order is not respected.

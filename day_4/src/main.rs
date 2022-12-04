@@ -40,7 +40,6 @@ fn find_overlaps() {
             if second_assignment.contained_in(&first_assignment) {
                 println!("Line {}: Second assigment included: {:?}", line_index + 1, line_str)
             }
-            // Count from 0 as normal people do
         }
     }
 }
@@ -53,7 +52,6 @@ fn extract_assignment(captures: &Captures, capture1: usize, capture2: usize) -> 
 
 #[derive(Debug)]
 struct Assignment {
-    // TODO assignment could come in any other
     start: u32,
     end: u32,
 }
@@ -66,7 +64,11 @@ impl Assignment {
         if end == 0 {
             return Err(String::from("end cannot be 0"));
         }
-        Ok(Assignment { start, end })
+        if start < end {
+            Ok(Assignment { start, end })
+        } else {
+            Ok(Assignment { start: end, end: start })
+        }
     }
 
     fn contained_in(&self, other: &Assignment) -> bool {
@@ -138,6 +140,17 @@ mod assigment_tests {
     }
 
     #[test]
+    fn auto_sorts_assigment() {
+        let assigment = Assignment::from(1, 2).unwrap();
+        assert_eq!(assigment.start, 1);
+        assert_eq!(assigment.end, 2);
+
+        let assigment = Assignment::from(2, 1).unwrap();
+        assert_eq!(assigment.start, 1);
+        assert_eq!(assigment.end, 2);
+    }
+
+    #[test]
     fn assigment_starts_cannot_be_0() {
         let error = Assignment::from(0, 1).unwrap_err();
         assert_eq!(error, "start cannot be 0");
@@ -145,7 +158,7 @@ mod assigment_tests {
 
     #[test]
     fn assigment_end_cannot_be_0() {
-        let error = Assignment::from(1,0).unwrap_err();
+        let error = Assignment::from(1, 0).unwrap_err();
         assert_eq!(error, "end cannot be 0");
     }
 }
