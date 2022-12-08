@@ -24,3 +24,5 @@ Hoping the 0-cost-abstraction promise is true):
 ** Practice with '?' operand: it cannot be used for quick replacement of unwrap for tests :'(
 ** Beware using constructor without named args.
 If the var name is the same, order is not respected.
+* Day 5
+* Using "collect" to aggregate data.

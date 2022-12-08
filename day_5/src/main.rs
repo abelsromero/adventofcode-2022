@@ -8,7 +8,7 @@ use file_utils::read_file;
 
 lazy_static! {
     static ref MOVEMENT_PATTERN: Regex = Regex::new(r"^move (\d+) from (\d+) to (\d+)$").unwrap();
-    static ref STACK_NUMBERS: Regex = Regex::new(r"^( *(\d+) *)*$").unwrap();
+    static ref STACK_NUMBERS: Regex = Regex::new(r"^\s*(\d+)\s+(\d+)(?:\s+(\d+))*\s*$").unwrap();
 }
 
 fn main() {
@@ -30,7 +30,7 @@ fn operate_crane() {
     let mut stacks: Vec<Stack> = Vec::new();
 
     let mut lines: Vec<String> = reader.lines()
-        .map(|line| { line.unwrap() })
+        .map(|line| line.unwrap())
         .collect();
 
     let mut i = lines.len() - 1;
@@ -51,17 +51,32 @@ fn operate_crane() {
 
         // process stack numbers
         println!("Processing {}", line_str);
-        let captures = STACK_NUMBERS.captures(&line_str).unwrap();
-        let x1 = captures.get(0).unwrap().as_str();
-        let x2 = captures.get(1).unwrap().as_str();
-        let x3 = captures.get(2).unwrap().as_str();
-        let x4 = captures.get(3).unwrap().as_str();
-        let x5 = captures.get(4).unwrap().as_str();
+        let vec = parse_stack_numbers(&line_str);
 
-        println!("{:?}", captures);
+        if (vec.len() == 0) {
+            println!("No valid stack numbers found");
+            return;
+        }
+
         while is_crates_line(line_str) {}
     }
 }
+
+fn parse_stack_numbers(line: &str) -> Vec<i32> {
+    if STACK_NUMBERS.is_match(&line) {
+        let captures = STACK_NUMBERS.captures(&line).unwrap();
+
+        return captures.iter()
+            .skip(1)
+            .map(|c| {
+                c.unwrap().as_str().parse().unwrap()
+            })
+            .collect();
+    }
+    Vec::new()
+}
+
+// TODO piles id in input are not in order
 
 fn is_crates_line(line: &str) -> bool {
     true
@@ -101,32 +116,6 @@ impl Stack {
 }
 
 
-#[derive(Debug)]
-struct Assignment {
-    start: u32,
-    end: u32,
-}
-
-impl Assignment {
-    fn from(start: u32, end: u32) -> Result<Assignment, String> {
-        if start == 0 {
-            return Err(String::from("start cannot be 0"));
-        }
-        if end == 0 {
-            return Err(String::from("end cannot be 0"));
-        }
-        if start < end {
-            Ok(Assignment { start, end })
-        } else {
-            Ok(Assignment { start: end, end: start })
-        }
-    }
-
-    fn contained_in(&self, other: &Assignment) -> bool {
-        self.start >= other.start && self.end <= other.end
-    }
-}
-
 mod file_utils {
     use std::env;
     use std::fs::File;
@@ -145,71 +134,59 @@ mod file_utils {
     }
 }
 
-#[allow(non_snake_case)]
 #[cfg(test)]
-mod assigment_tests {
-    use crate::Assignment;
+mod stack_numbers_parser {
+    use crate::parse_stack_numbers;
 
     #[test]
-    fn assigment_not_contained() {
-        let first = Assignment::from(1, 2).unwrap();
-        let second = Assignment::from(3, 4).unwrap();
-        let actual = first.contained_in(&second);
-        assert_eq!(actual, false);
+    fn parses_empty_line() {
+        let line = "";
+        let vec = parse_stack_numbers(line);
+        assert_eq!(vec.len(), 0);
     }
 
     #[test]
-    fn assigment_is_contained_and_equal() {
-        let first = Assignment::from(2, 3).unwrap();
-        let second = Assignment::from(2, 3).unwrap();
-        let actual = first.contained_in(&second);
-        assert_eq!(actual, true);
+    fn parses_invalid_line_only_text() {
+        let line = "hello";
+        let vec = parse_stack_numbers(line);
+        assert_eq!(vec.len(), 0);
     }
 
     #[test]
-    fn assigment_is_contained() {
-        let first = Assignment::from(2, 3).unwrap();
-        let second = Assignment::from(1, 4).unwrap();
-        let actual = first.contained_in(&second);
-        assert_eq!(actual, true);
+    fn parses_invalid_line_mixed_text() {
+        let line = "1 2 3 a";
+        let vec = parse_stack_numbers(line);
+        assert_eq!(vec.len(), 0);
     }
 
     #[test]
-    fn assigment_is_not_contained_by_start() {
-        let first = Assignment::from(1, 3).unwrap();
-        let second = Assignment::from(2, 4).unwrap();
-        let actual = first.contained_in(&second);
-        assert_eq!(actual, false);
+    fn parses_invalid_line_text_with_numbers() {
+        let line = "1 2a 3";
+        let vec = parse_stack_numbers(line);
+        assert_eq!(vec.len(), 0);
     }
 
     #[test]
-    fn assigment_is_not_contained_by_end() {
-        let first = Assignment::from(2, 5).unwrap();
-        let second = Assignment::from(1, 4).unwrap();
-        let actual = first.contained_in(&second);
-        assert_eq!(actual, false);
+    fn parses_simple_line() {
+        let line = "1 2 3";
+        let vec = parse_stack_numbers(line);
+        assert_eq!(vec.len(), 3);
+        assert_eq!(value_at(&vec, 0), 1);
+        assert_eq!(value_at(&vec, 1), 2);
+        assert_eq!(value_at(&vec, 2), 3);
     }
 
     #[test]
-    fn auto_sorts_assigment() {
-        let assigment = Assignment::from(1, 2).unwrap();
-        assert_eq!(assigment.start, 1);
-        assert_eq!(assigment.end, 2);
-
-        let assigment = Assignment::from(2, 1).unwrap();
-        assert_eq!(assigment.start, 1);
-        assert_eq!(assigment.end, 2);
+    fn parses_complex_line() {
+        let line = "    11    232     323 ";
+        let vec = parse_stack_numbers(line);
+        assert_eq!(vec.len(), 3);
+        assert_eq!(value_at(&vec, 0), 11);
+        assert_eq!(value_at(&vec, 1), 232);
+        assert_eq!(value_at(&vec, 2), 323);
     }
 
-    #[test]
-    fn assigment_starts_cannot_be_0() {
-        let error = Assignment::from(0, 1).unwrap_err();
-        assert_eq!(error, "start cannot be 0");
-    }
-
-    #[test]
-    fn assigment_end_cannot_be_0() {
-        let error = Assignment::from(1, 0).unwrap_err();
-        assert_eq!(error, "end cannot be 0");
+    fn value_at(vec: &Vec<i32>, index: usize) -> i32 {
+        *vec.get(index).unwrap()
     }
 }
