@@ -25,4 +25,14 @@ Hoping the 0-cost-abstraction promise is true):
 ** Beware using constructor without named args.
 If the var name is the same, order is not respected.
 * Day 5
-* Using "collect" to aggregate data.
+** Using "collect" to aggregate data.
+** String split is not very useful, does not allow to use regex.
+** Compile works in mysterious ways
+*** Both this compile and not sure if there's a difference.
++
+----
+let number_value:u32 = (&line[start_match..i]).parse().unwrap();
+let number_value:u32 = line[start_match..i].parse().unwrap();
+----
+*** Vec type can be inferred from later code. No need to worry about compilation errors on declaration.
+*** Type alias can be used for readability and type safety.

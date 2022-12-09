@@ -1,25 +1,25 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::io::BufRead;
 
 use lazy_static::lazy_static;
-use regex::{Captures, Regex};
+use regex::{Regex};
 
 use file_utils::read_file;
 
 lazy_static! {
     static ref MOVEMENT_PATTERN: Regex = Regex::new(r"^move (\d+) from (\d+) to (\d+)$").unwrap();
-    static ref STACK_NUMBERS: Regex = Regex::new(r"^\s*(\d+)\s+(\d+)(?:\s+(\d+))*\s*$").unwrap();
+    static ref STACK_NUMBERS_PATTERN: Regex = Regex::new(r"^\s*\d+(?:\s+\d+)*\s*$").unwrap();
 }
 
 fn main() {
     operate_crane();
 }
 
-fn is_movement_line(line: &String) -> bool {
+fn is_movement_line(line: &str) -> bool {
     MOVEMENT_PATTERN.is_match(line) || is_comment(line)
 }
 
-fn is_comment(line: &String) -> bool {
+fn is_comment(line: &str) -> bool {
     line.starts_with("//")
 }
 
@@ -27,9 +27,8 @@ fn operate_crane() {
     let reader = read_file();
 
     let mut movements: VecDeque<Movement> = VecDeque::new();
-    let mut stacks: Vec<Stack> = Vec::new();
 
-    let mut lines: Vec<String> = reader.lines()
+    let lines: Vec<String> = reader.lines()
         .map(|line| line.unwrap())
         .collect();
 
@@ -51,35 +50,90 @@ fn operate_crane() {
 
         // process stack numbers
         println!("Processing {}", line_str);
-        let vec = parse_stack_numbers(&line_str);
-
-        if (vec.len() == 0) {
+        let stacks_numbers = parse_stack_numbers(&line_str);
+        if stacks_numbers.len() == 0 {
             println!("No valid stack numbers found");
             return;
         }
 
-        while is_crates_line(line_str) {}
+        let mut stacks = stacks_numbers.iter()
+            .map(|v| (*v, Stack::new()))
+            .collect::<HashMap<u32, Stack>>();
+        let mut x = stacks.get_mut(&0).unwrap();
+        x.push("X");
+        //x.crates.push("hullo");
+        println!("{}", 2);
+
+        //parse_stack_crates(&line_str, &stacks);
     }
 }
 
-fn parse_stack_numbers(line: &str) -> Vec<i32> {
-    if STACK_NUMBERS.is_match(&line) {
-        let captures = STACK_NUMBERS.captures(&line).unwrap();
+fn parse_stack_numbers(line: &str) -> Vec<u32> {
+    let mut stack_numbers = Vec::new();
 
-        return captures.iter()
-            .skip(1)
-            .map(|c| {
-                c.unwrap().as_str().parse().unwrap()
-            })
-            .collect();
+    if STACK_NUMBERS_PATTERN.is_match(&line) {
+        // Cannot use groups when the number of elements is not known, so "old school"
+        let mut matching: bool = false;
+        let mut start_match: usize = 0;
+        for (i, char) in line.chars().enumerate() {
+            if matching {
+                if char.is_whitespace() {
+                    let number_value: u32 = line[start_match..i].parse().unwrap();
+                    stack_numbers.push(number_value);
+                    matching = false;
+                } else {
+                    continue;
+                }
+            }
+            if !matching {
+                if char.is_whitespace() {
+                    continue;
+                } else {
+                    matching = true;
+                    start_match = i;
+                }
+            }
+        }
+        if matching {
+            let number_value: u32 = line[start_match..line.len()].parse().unwrap();
+            stack_numbers.push(number_value);
+        }
     }
-    Vec::new()
+    stack_numbers
 }
 
-// TODO piles id in input are not in order
+fn parse_stack_crates(line: &str, mut stacks: &HashMap<u32, Stack>) {
+    let mut matching: bool = false;
+    let mut start_match: usize = 0;
 
-fn is_crates_line(line: &str) -> bool {
-    true
+    let mut crate_index = 0;
+
+    for (i, char) in line.chars().enumerate() {
+        if matching {
+            if char == ']' {
+                let crate_type = &line[start_match..i - 1];
+                let x = stacks.get_mut(&crate_index).unwrap();
+                x.push(crate_type);
+                matching = false;
+                crate_index += 1;
+            } else {
+                continue;
+            }
+        }
+        if !matching {
+            if char == '[' {
+                matching = true;
+                start_match = i;
+            } else {
+                continue;
+            }
+        }
+    }
+    if matching {
+        let crate_type = &line[start_match..line.len() - 1];
+        stacks.get_mut(&crate_index).unwrap()
+            .push(crate_type);
+    }
 }
 
 fn is_skippable(line: &str) -> bool {
@@ -106,12 +160,19 @@ impl Movement {
 }
 
 struct Stack {
-    crates: Vec<char>,
+    crates: Vec<&'static str>,
 }
 
 impl Stack {
     fn new() -> Stack {
         Stack { crates: Vec::new() }
+    }
+
+    fn len(&self) -> usize {
+        self.crates.len()
+    }
+    pub fn push(&mut self, value: &str) {
+        self.crates.push(value)
     }
 }
 
@@ -178,15 +239,33 @@ mod stack_numbers_parser {
 
     #[test]
     fn parses_complex_line() {
-        let line = "    11    232     323 ";
+        let line = "    11    232     323 454    565  676";
         let vec = parse_stack_numbers(line);
-        assert_eq!(vec.len(), 3);
+        assert_eq!(vec.len(), 6);
         assert_eq!(value_at(&vec, 0), 11);
         assert_eq!(value_at(&vec, 1), 232);
         assert_eq!(value_at(&vec, 2), 323);
+        assert_eq!(value_at(&vec, 3), 454);
+        assert_eq!(value_at(&vec, 4), 565);
+        assert_eq!(value_at(&vec, 5), 676);
     }
 
-    fn value_at(vec: &Vec<i32>, index: usize) -> i32 {
+    fn value_at(vec: &Vec<u32>, index: usize) -> u32 {
         *vec.get(index).unwrap()
+    }
+}
+
+#[cfg(test)]
+mod stack_crates_parser {
+    use std::collections::HashMap;
+
+    use crate::{parse_stack_crates, Stack};
+
+    #[test]
+    fn parse_single_crate() {
+        let line = "[A]";
+        let mut stacks = HashMap::from([(1, Stack::new())]);
+        // parse_stack_crates(line, &stacks);
+        assert_eq!(stacks.get(&1).unwrap().len(), 1)
     }
 }
