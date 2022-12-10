@@ -2,7 +2,7 @@ use std::collections::{HashMap, VecDeque};
 use std::io::BufRead;
 
 use lazy_static::lazy_static;
-use regex::{Regex};
+use regex::Regex;
 
 use file_utils::read_file;
 
@@ -59,7 +59,8 @@ fn operate_crane() {
         let mut stacks = stacks_numbers.iter()
             .map(|v| (*v, Stack::new()))
             .collect::<HashMap<u32, Stack>>();
-        let mut x = stacks.get_mut(&0).unwrap();
+
+        let x = stacks.get_mut(&0).unwrap();
         x.push("X");
         //x.crates.push("hullo");
         println!("{}", 2);
@@ -102,7 +103,7 @@ fn parse_stack_numbers(line: &str) -> Vec<u32> {
     stack_numbers
 }
 
-fn parse_stack_crates(line: &str, mut stacks: &HashMap<u32, Stack>) {
+fn parse_stack_crates(line: &str, stacks: &mut HashMap<u32, Stack>) {
     let mut matching: bool = false;
     let mut start_match: usize = 0;
 
@@ -159,11 +160,11 @@ impl Movement {
     }
 }
 
-struct Stack {
-    crates: Vec<&'static str>,
+struct Stack<'a> {
+    crates: Vec<&'a str>,
 }
 
-impl Stack {
+impl Stack<'_> {
     fn new() -> Stack {
         Stack { crates: Vec::new() }
     }
@@ -171,11 +172,19 @@ impl Stack {
     fn len(&self) -> usize {
         self.crates.len()
     }
+
     pub fn push(&mut self, value: &str) {
         self.crates.push(value)
     }
 }
 
+fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
+    if x.len() > y.len() {
+        x
+    } else {
+        y
+    }
+}
 
 mod file_utils {
     use std::env;
@@ -259,12 +268,12 @@ mod stack_numbers_parser {
 mod stack_crates_parser {
     use std::collections::HashMap;
 
-    use crate::{parse_stack_crates, Stack};
+    use crate::Stack;
 
     #[test]
     fn parse_single_crate() {
         let line = "[A]";
-        let mut stacks = HashMap::from([(1, Stack::new())]);
+        let stacks = HashMap::from([(1, Stack::new())]);
         // parse_stack_crates(line, &stacks);
         assert_eq!(stacks.get(&1).unwrap().len(), 1)
     }

@@ -36,3 +36,4 @@ let number_value:u32 = line[start_match..i].parse().unwrap();
 ----
 *** Vec type can be inferred from later code. No need to worry about compilation errors on declaration.
 *** Type alias can be used for readability and type safety.
+* Need to pay attention when using HashMap, it distinguishes between `get` and `get_mut` if you want to modify the value.
