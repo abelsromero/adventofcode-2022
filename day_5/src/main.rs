@@ -1,3 +1,4 @@
+use std::borrow::BorrowMut;
 use std::collections::{HashMap, VecDeque};
 use std::io::BufRead;
 
@@ -65,7 +66,7 @@ fn operate_crane() {
         //x.crates.push("hullo");
         println!("{}", 2);
 
-        //parse_stack_crates(&line_str, &stacks);
+        parse_stack_crates(&line_str, stacks.borrow_mut());
     }
 }
 
@@ -103,7 +104,7 @@ fn parse_stack_numbers(line: &str) -> Vec<u32> {
     stack_numbers
 }
 
-fn parse_stack_crates(line: &str, stacks: &mut HashMap<u32, Stack>) {
+fn parse_stack_crates<'a>(line: &'a str, stacks: &mut HashMap<u32, Stack<'a>>) {
     let mut matching: bool = false;
     let mut start_match: usize = 0;
 
@@ -164,8 +165,8 @@ struct Stack<'a> {
     crates: Vec<&'a str>,
 }
 
-impl Stack<'_> {
-    fn new() -> Stack {
+impl<'a> Stack<'a> {
+    fn new() -> Stack<'a> {
         Stack { crates: Vec::new() }
     }
 
@@ -173,18 +174,33 @@ impl Stack<'_> {
         self.crates.len()
     }
 
-    pub fn push(&mut self, value: &str) {
+    pub fn push(&mut self, value: &'a str) {
+        // This requires to set the lifetime because the &str reference
+        // could be out of scope.
+        // Then, this requires the lifetime definition to be propagated
+        // to the imp, struct and 'parse_stack_crates' method.
         self.crates.push(value)
     }
 }
 
-fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
-    if x.len() > y.len() {
-        x
-    } else {
-        y
-    }
-}
+// TODO test, does this work without
+// struct StringStack {
+//     crates: Vec<String>,
+// }
+//
+// impl StringStack {
+//     fn new() -> StringStack {
+//         StringStack { crates: Vec::new() }
+//     }
+//
+//     fn len(&self) -> usize {
+//         self.crates.len()
+//     }
+//
+//     pub fn push(&mut self, value: String) {
+//         self.crates.push(value)
+//     }
+// }
 
 mod file_utils {
     use std::env;
@@ -266,15 +282,18 @@ mod stack_numbers_parser {
 
 #[cfg(test)]
 mod stack_crates_parser {
+    use std::borrow::BorrowMut;
     use std::collections::HashMap;
 
-    use crate::Stack;
+    use crate::{parse_stack_crates, Stack};
 
     #[test]
     fn parse_single_crate() {
         let line = "[A]";
-        let stacks = HashMap::from([(1, Stack::new())]);
-        // parse_stack_crates(line, &stacks);
+        let mut stacks = HashMap::new();
+        stacks.insert(1u32, Stack::new());
+
+        parse_stack_crates(line, stacks.borrow_mut());
         assert_eq!(stacks.get(&1).unwrap().len(), 1)
     }
 }
