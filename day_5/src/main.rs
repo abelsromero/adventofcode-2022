@@ -57,16 +57,10 @@ fn operate_crane() {
             return;
         }
 
-        let mut stacks = stacks_numbers.iter()
-            .map(|v| (*v, Stack::new()))
-            .collect::<HashMap<u32, Stack>>();
+        let mut stacks_pool = StacksPool::from(stacks_numbers);
+        parse_stack_crates(&line_str, stacks_pool.borrow_mut());
 
-        let x = stacks.get_mut(&0).unwrap();
-        x.push("X");
-        //x.crates.push("hullo");
-        println!("{}", 2);
-
-        parse_stack_crates(&line_str, stacks.borrow_mut());
+        println!("Processed stacks");
     }
 }
 
@@ -104,20 +98,22 @@ fn parse_stack_numbers(line: &str) -> Vec<u32> {
     stack_numbers
 }
 
-fn parse_stack_crates<'a>(line: &'a str, stacks: &mut HashMap<u32, Stack<'a>>) {
+fn parse_stack_crates<'a>(line: &'a str, stacks: &mut StacksPool<'a>) {
     let mut matching: bool = false;
     let mut start_match: usize = 0;
 
-    let mut crate_index = 0;
+    // Deference the reference to avoid borrowing issues, this could be a smell?
+    let mut stack_index = 0;
 
     for (i, char) in line.chars().enumerate() {
         if matching {
             if char == ']' {
-                let crate_type = &line[start_match..i - 1];
-                let x = stacks.get_mut(&crate_index).unwrap();
-                x.push(crate_type);
+                let crate_type = &line[start_match + 1..i];
+                let stack_id = *stacks.ids.get(stack_index).unwrap();
+                let stack = stacks.get_mut(stack_id).unwrap();
+                stack.push(crate_type);
                 matching = false;
-                crate_index += 1;
+                stack_index += 1;
             } else {
                 continue;
             }
@@ -133,7 +129,8 @@ fn parse_stack_crates<'a>(line: &'a str, stacks: &mut HashMap<u32, Stack<'a>>) {
     }
     if matching {
         let crate_type = &line[start_match..line.len() - 1];
-        stacks.get_mut(&crate_index).unwrap()
+        let stack_id = *stacks.ids.get(stack_index).unwrap();
+        stacks.get_mut(stack_id).unwrap()
             .push(crate_type);
     }
 }
@@ -158,6 +155,36 @@ impl Movement {
             source_stack: captures.get(2).unwrap().as_str().parse().unwrap(),
             target_stack: captures.get(3).unwrap().as_str().parse().unwrap(),
         }
+    }
+}
+
+// Keep copy of ids because HashMap::keys does not maintain insert order
+// with ::insert or ::from
+struct StacksPool<'a> {
+    ids: Vec<u32>,
+    stacks: HashMap<u32, Stack<'a>>,
+}
+
+impl<'a> StacksPool<'a> {
+    // TODO can we use array to avoid move issues with Vector and since we know the size in advance?
+    fn from(ids: Vec<u32>) -> StacksPool<'a> {
+        let mut stacks = HashMap::new();
+        // clone bc: 'move occurs because `ids` has type `Vec<u32>`, which does not implement the `Copy` trait'
+        for id in ids.clone() {
+            stacks.insert(id, Stack::new());
+        }
+
+        StacksPool { ids, stacks }
+    }
+
+    // TODO can we make it to return non-reference?
+    // In theory a returned value already is
+    pub fn get(&self, pool_id: u32) -> Option<&Stack<'a>> {
+        self.stacks.get(&pool_id)
+    }
+
+    pub fn get_mut(&mut self, pool_id: u32) -> Option<&mut Stack<'a>> {
+        self.stacks.get_mut(&pool_id)
     }
 }
 
@@ -285,15 +312,59 @@ mod stack_crates_parser {
     use std::borrow::BorrowMut;
     use std::collections::HashMap;
 
-    use crate::{parse_stack_crates, Stack};
+    use crate::{parse_stack_crates, Stack, StacksPool};
 
     #[test]
     fn parse_single_crate() {
         let line = "[A]";
-        let mut stacks = HashMap::new();
-        stacks.insert(1u32, Stack::new());
+        let stack_id = 1u32;
+        let mut stacks = StacksPool::from(Vec::from([stack_id]));
 
         parse_stack_crates(line, stacks.borrow_mut());
-        assert_eq!(stacks.get(&1).unwrap().len(), 1)
+
+        let stack = stacks.get(stack_id).unwrap();
+        assert_eq!(stack.len(), 1);
+        assert_eq!(*stack.crates.get(0).unwrap(), "A");
+    }
+
+    #[test]
+    fn parse_three_crates() {
+        let line = "[A] [B] [C]";
+        let mut stacks = StacksPool::from(Vec::from([1, 2, 3]));
+
+        parse_stack_crates(line, stacks.borrow_mut());
+
+        let first_stack = stacks.get(1).unwrap();
+
+        assert_eq!(first_stack.len(), 1);
+        assert_eq!(*first_stack.crates.get(0).unwrap(), "A");
+
+        let second_stack = stacks.get(2).unwrap();
+        assert_eq!(second_stack.len(), 1);
+        assert_eq!(*second_stack.crates.get(0).unwrap(), "B");
+
+        let third_stack = stacks.get(3).unwrap();
+        assert_eq!(third_stack.len(), 1);
+        assert_eq!(*third_stack.crates.get(0).unwrap(), "C");
+    }
+
+    #[test]
+    fn parse_complex_crates() {
+        let line = "   [Y]   [Z] [X]   ";
+        let mut stacks = StacksPool::from(Vec::from([11, 22, 33]));
+
+        parse_stack_crates(line, stacks.borrow_mut());
+
+        let first_stack = stacks.get(11).unwrap();
+        assert_eq!(first_stack.len(), 1);
+        assert_eq!(*first_stack.crates.get(0).unwrap(), "Y");
+
+        let second_stack = stacks.get(22).unwrap();
+        assert_eq!(second_stack.len(), 1);
+        assert_eq!(*second_stack.crates.get(0).unwrap(), "Z");
+
+        let third_stack = stacks.get(33).unwrap();
+        assert_eq!(third_stack.len(), 1);
+        assert_eq!(*third_stack.crates.get(0).unwrap(), "X");
     }
 }
